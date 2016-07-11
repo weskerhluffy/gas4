@@ -24,8 +24,8 @@
 #define MAX_QUERIES 100000
 // 12 es 10 de el num, 1 del espacio 1 de signo
 #define TAM_MAX_LINEA (MAX_NUMEROS*12) 
-#define CACA_X_MAX_PROFUNDIDAD 48
-#define MAX_NODOS (1 << 18)
+#define CACA_X_MAX_PROFUNDIDAD 19
+#define MAX_NODOS (1 << CACA_X_MAX_PROFUNDIDAD)
 #define CACA_X_VALOR_INVALIDO -1
 
 #define CACA_X_VALIDAR_ARBOLINES
@@ -141,6 +141,7 @@ static inline char *caca_arreglo_a_cadena(tipo_dato *arreglo,
 	*(ap_buffer + characteres_escritos) = '\0';
 	return ap_buffer;
 }
+
 
 static inline char *caca_arreglo_a_cadena_natural(natural *arreglo,
 		natural tam_arreglo, char *buffer) {
@@ -509,14 +510,14 @@ static inline void caca_x_actualiza_estado(tipo_dato *numeros,
 static inline void caca_x_main() {
 	tipo_dato *matriz_nums = NULL;
 	natural num_numeros = 0;
+	natural cont_casos = 0;
 
 	char buf[100] = { '\0' };
 
 	matriz_nums = calloc(MAX_NUMEROS_REDONDEADO, sizeof(tipo_dato));
 	assert_timeout(matriz_nums);
 
-	estado = calloc(CACA_X_MAX_PROFUNDIDAD + 2,
-			sizeof(caca_x_estado_recursion));
+	estado = calloc(CACA_X_MAX_PROFUNDIDAD, sizeof(caca_x_estado_recursion));
 	assert_timeout(estado);
 
 	while (scanf("%u\n", &num_numeros) > 0) {
@@ -585,12 +586,12 @@ static inline void caca_x_main() {
 
 			switch (tipo_query) {
 			case 1:
+
 				sum = caca_x_suma_segmento(arbol_numeros_unicos,
 						idx_query_ini - 1, idx_query_fin - 1);
 				printf("%ld\n", sum);
 				break;
 			case 0:
-
 				for (int i = idx_query_ini - 1; i <= idx_query_fin - 1; i++) {
 					tipo_dato nuevo_valor = 0;
 					natural idx_actualizado = 0;
@@ -619,6 +620,8 @@ static inline void caca_x_main() {
 			cont_queries++;
 		}
 		free(arbol_numeros_unicos);
+
+		cont_casos++;
 	}
 	free(matriz_nums);
 	free(estado);
