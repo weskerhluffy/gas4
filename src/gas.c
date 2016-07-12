@@ -19,12 +19,13 @@
 #include <math.h>
 
 #define MAX_NUMEROS 100000
-#define MAX_NUMEROS_REDONDEADO 131072
 #define MAX_VALOR INT_MAX
 #define MAX_QUERIES 100000
 // 12 es 10 de el num, 1 del espacio 1 de signo
 #define TAM_MAX_LINEA (MAX_NUMEROS*12) 
 #define CACA_X_MAX_PROFUNDIDAD 19
+// Menos 1 por que es para redondear y menos otro por que el num de nodos es el doble del redondeado
+#define MAX_NUMEROS_REDONDEADO (1<<(CACA_X_MAX_PROFUNDIDAD-2))
 #define MAX_NODOS (1 << CACA_X_MAX_PROFUNDIDAD)
 #define CACA_X_VALOR_INVALIDO -1
 
@@ -38,7 +39,7 @@
 #define assert_timeout(condition) assert(condition);
 /*
  #define assert_timeout(condition) 0
- #define assert_timeout(condition) if(!(condition)){printf("fuck\n");sleep(10);assert(condition);}
+ #define assert_timeout(condition) if(!(condition)){printf("fuck\n");sleep(10);}
  */
 
 typedef long tipo_dato;
@@ -141,7 +142,6 @@ static inline char *caca_arreglo_a_cadena(tipo_dato *arreglo,
 	*(ap_buffer + characteres_escritos) = '\0';
 	return ap_buffer;
 }
-
 
 static inline char *caca_arreglo_a_cadena_natural(natural *arreglo,
 		natural tam_arreglo, char *buffer) {
@@ -534,8 +534,19 @@ static inline void caca_x_main() {
 
 		caca_log_debug("a vece siento q %d\n", num_numeros);
 
-		lee_matrix_long_stdin(matriz_nums, &num_filas, NULL, 1,
-				MAX_NUMEROS_REDONDEADO);
+		/*
+		 lee_matrix_long_stdin(matriz_nums, &num_filas, NULL, 1,
+		 MAX_NUMEROS_REDONDEADO);
+		 */
+
+		tipo_dato caca = 0;
+		natural contacaca = 0;
+
+		while (contacaca < num_numeros) {
+			scanf("%lu", &caca);
+			matriz_nums[contacaca] = caca;
+			contacaca++;
+		}
 
 		numeros = matriz_nums;
 		scanf("%u\n", &num_queries);
@@ -568,6 +579,8 @@ static inline void caca_x_main() {
 		caca_x_construye_arbol_binario_segmentado(numeros, arbol_numeros_unicos,
 				num_numeros_redondeado - 1, max_profundidad, num_numeros - 1);
 
+		printf("Case #%u:\n", cont_casos + 1);
+
 		while (cont_queries < num_queries) {
 			unsigned short tipo_query = 0;
 			tipo_dato sum = 0;
@@ -586,13 +599,13 @@ static inline void caca_x_main() {
 
 			switch (tipo_query) {
 			case 1:
-
 				sum = caca_x_suma_segmento(arbol_numeros_unicos,
 						idx_query_ini - 1, idx_query_fin - 1);
 				printf("%ld\n", sum);
 				break;
 			case 0:
-				for (int i = idx_query_ini - 1; i <= idx_query_fin - 1; i++) {
+				for (natural i = idx_query_ini - 1; i <= idx_query_fin - 1;
+						i++) {
 					tipo_dato nuevo_valor = 0;
 					natural idx_actualizado = 0;
 					tipo_dato viejo_valor = 0;
@@ -609,16 +622,16 @@ static inline void caca_x_main() {
 
 					caca_x_actualiza_estado(numeros, arbol_numeros_unicos,
 							idx_actualizado, nuevo_valor, num_nodos - 2);
-
 				}
 				break;
 			default:
 				abort();
 				break;
 			}
-
 			cont_queries++;
 		}
+
+		printf("\n");
 		free(arbol_numeros_unicos);
 
 		cont_casos++;
