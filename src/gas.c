@@ -32,9 +32,9 @@
 
 #define GAS_VALIDAR_SEGMENTOS
 
- #define caca_log_debug(formato, args...) 0
+#define caca_log_debug(formato, args...) 0
 /*
-#define caca_log_debug printf
+ #define caca_log_debug printf
  */
 
 #define assert_timeout(condition) assert(condition);
@@ -480,7 +480,6 @@ static inline void caca_x_construye_arbol_binario_segmentado(tipo_dato *numeros,
 }
 
 static inline void caca_x_encuentra_indices_segmento(
-		caca_x_numeros_unicos_en_rango *arbolini,
 		caca_x_numeros_unicos_en_rango *nodos, tipo_dato *numeros,
 		natural idx_nodo, natural limite_izq, natural limite_der,
 		natural *indices, natural *num_indices, natural num_nodos,
@@ -502,15 +501,15 @@ static inline void caca_x_encuentra_indices_segmento(
 			caca_log_debug("pues nadie sera %d,%d\n", nodo->limite_izq,
 					nodo->limite_der);
 
-			gas_actualiza_nodo(arbolini, numeros, idx_nodo, num_nodos, falso,
+			gas_actualiza_nodo(nodos, numeros, idx_nodo, num_nodos, falso,
 					num_op);
 
-			caca_x_encuentra_indices_segmento(arbolini, nodos, numeros,
-					2 * idx_nodo + 1, limite_izq, limite_der, indices,
-					num_indices, num_nodos, num_op);
-			caca_x_encuentra_indices_segmento(arbolini, nodos, numeros,
-					2 * idx_nodo + 2, limite_izq, limite_der, indices,
-					num_indices, num_nodos, num_op);
+			caca_x_encuentra_indices_segmento(nodos, numeros, 2 * idx_nodo + 1,
+					limite_izq, limite_der, indices, num_indices, num_nodos,
+					num_op);
+			caca_x_encuentra_indices_segmento(nodos, numeros, 2 * idx_nodo + 2,
+					limite_izq, limite_der, indices, num_indices, num_nodos,
+					num_op);
 		}
 	}
 
@@ -562,17 +561,16 @@ static inline long caca_x_suma_segmento(
 	natural *indices_nodos = (natural[CACA_X_MAX_NODOS_AFECTADOS] ) { 0 };
 	char buf[100] = { '\0' };
 
-	caca_x_encuentra_indices_segmento(arbol_numeros_unicos,
-			arbol_numeros_unicos, numeros, 0, limite_izq, limite_der,
-			indices_nodos, &num_indices_nodos, num_nodos, num_op);
+	caca_x_encuentra_indices_segmento(arbol_numeros_unicos, numeros, 0,
+			limite_izq, limite_der, indices_nodos, &num_indices_nodos,
+			num_nodos, num_op);
 
 	assert_timeout(num_indices_nodos < CACA_X_MAX_NODOS_AFECTADOS);
 
 	qsort(indices_nodos, num_indices_nodos, sizeof(int),
 			caca_comun_compara_enteros);
 	caca_log_debug("indices de segmento %d:%d %s\n", limite_izq, limite_der,
-			caca_arreglo_a_cadena_natural(indices_nodos, num_indices_nodos,
-					buf));
+			caca_arreglo_a_cadena_natural(indices_nodos, num_indices_nodos, buf));
 
 	res = caca_x_generar_suma_unicos(arbol_numeros_unicos, numeros,
 			indices_nodos, num_indices_nodos, num_nodos, num_op);
@@ -656,14 +654,16 @@ static inline void caca_x_actualiza_estado(tipo_dato *numeros,
 	buf = calloc(100000, sizeof(char));
 #endif
 
-	caca_x_encuentra_indices_segmento(arbol_numeros_unicos,
-			arbol_numeros_unicos, numeros, 0, idx_actualizado_ini,
-			idx_actualizado_fin, indices_afectados_actualizacion,
+	caca_x_encuentra_indices_segmento(arbol_numeros_unicos, numeros, 0,
+			idx_actualizado_ini, idx_actualizado_fin,
+			indices_afectados_actualizacion,
 			&num_indices_afectados_actualizacion, num_nodos, num_op);
 
 	caca_log_debug("los idx afectados %s\n",
-			caca_arreglo_a_cadena_natural(indices_afectados_actualizacion,
-					num_indices_afectados_actualizacion, buf));
+			caca_arreglo_a_cadena_natural(indices_afectados_actualizacion, num_indices_afectados_actualizacion, buf));
+
+	assert_timeout(
+			num_indices_afectados_actualizacion < CACA_X_MAX_NODOS_AFECTADOS);
 
 	for (int i = idx_actualizado_ini; i <= idx_actualizado_fin; i++) {
 		tipo_dato viejo_valor = 0;
@@ -675,9 +675,6 @@ static inline void caca_x_actualiza_estado(tipo_dato *numeros,
 				nuevo_valor);
 		numeros[i] = nuevo_valor;
 	}
-
-	assert_timeout(
-			num_indices_afectados_actualizacion < CACA_X_MAX_NODOS_AFECTADOS);
 
 	caca_x_actualiza_arbol_numeros_unicos(arbol_numeros_unicos,
 			indices_afectados_actualizacion,
@@ -717,7 +714,7 @@ static inline void caca_x_main() {
 		natural num_nodos = 0;
 		caca_x_numeros_unicos_en_rango *arbol_numeros_unicos = NULL;
 
-		memset(matriz_nums, 0, MAX_NUMEROS_REDONDEADO);
+		memset(matriz_nums, 0, MAX_NUMEROS_REDONDEADO*sizeof(tipo_dato));
 
 		caca_log_debug("a vece siento q %d\n", num_numeros);
 
@@ -748,6 +745,8 @@ static inline void caca_x_main() {
 			max_profundidad++;
 		}
 		num_numeros_redondeado = (1 << max_profundidad);
+
+		assert_timeout(num_numeros_redondeado<=MAX_NUMEROS_REDONDEADO);
 
 		caca_log_debug("en estas paginas %s\n",
 				caca_arreglo_a_cadena(numeros, num_numeros_redondeado, buf));
@@ -780,7 +779,7 @@ static inline void caca_x_main() {
 			natural idx_query_fin = 0;
 
 			scanf("%hu %d %d\n", &tipo_query, &idx_query_ini, &idx_query_fin);
-			if (tipo_query == 1 && idx_query_ini > idx_query_fin) {
+			if (idx_query_ini > idx_query_fin) {
 				tipo_dato tmp = 0;
 				tmp = idx_query_fin;
 				idx_query_fin = idx_query_ini;
@@ -788,6 +787,11 @@ static inline void caca_x_main() {
 			}
 			caca_log_debug("q: %hu, ini %d, fin %d\n", tipo_query,
 					idx_query_ini, idx_query_fin);
+
+			assert_timeout(idx_query_ini - 1 < num_numeros_redondeado);
+			assert_timeout(idx_query_fin - 1 < num_numeros_redondeado);
+			assert_timeout(idx_query_ini <= num_numeros);
+			assert_timeout(idx_query_fin <= num_numeros);
 
 			switch (tipo_query) {
 			case 1:
