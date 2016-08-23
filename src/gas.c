@@ -37,7 +37,7 @@
  #define caca_log_debug printf
  */
 
-#define assert_timeout(condition) assert(condition);
+ #define assert_timeout(condition) assert(condition);
 /*
  #define assert_timeout(condition) 0
  #define assert_timeout(condition) if(!(condition)){printf("fuck\n");sleep(10);}
@@ -117,65 +117,6 @@ static inline void gas_actualiza_nodo(caca_x_numeros_unicos_en_rango *arbolini,
 		}
 
 	}
-}
-
-static inline void gas_actualiza_nodo_ancestro(
-		caca_x_numeros_unicos_en_rango *arbolini, tipo_dato *numeros,
-		natural idx_nodo, natural num_nodos, natural idx_nodo_ancestro_inferior,
-		natural num_op) {
-	tipo_dato suma_nueva = 0;
-	caca_x_numeros_unicos_en_rango *nodo = NULL;
-	caca_x_numeros_unicos_en_rango *nodo_hijo_izq = NULL;
-	caca_x_numeros_unicos_en_rango *nodo_hijo_der = NULL;
-
-	nodo = arbolini + idx_nodo;
-
-	assert_timeout(idx_nodo * 2 + 1 < num_nodos);
-	nodo_hijo_izq = arbolini + idx_nodo * 2 + 1;
-	nodo_hijo_der = arbolini + idx_nodo * 2 + 2;
-
-	suma_nueva = nodo_hijo_izq->suma + nodo_hijo_izq->suma;
-
-	assert_timeout(
-			!(arbolini + idx_nodo_ancestro_inferior)->necesita_actualizacion);
-
-	assert_timeout(
-			!(nodo_hijo_izq->necesita_actualizacion
-					== nodo_hijo_der->necesita_actualizacion
-					&& nodo_hijo_izq->necesita_actualizacion));
-
-	if (nodo->necesita_actualizacion) {
-		gas_actualiza_nodo(arbolini, numeros, idx_nodo, num_nodos, falso,
-				num_op);
-		assert_timeout(
-				nodo->necesita_actualizacion
-						|| nodo_hijo_der->necesita_actualizacion
-						|| nodo->suma == suma_nueva);
-	} else {
-		assert_timeout(
-				(nodo_hijo_izq->idx == idx_nodo_ancestro_inferior
-						|| nodo_hijo_der->idx == idx_nodo_ancestro_inferior)
-						&& (nodo_hijo_izq->idx != nodo_hijo_der->idx));
-
-		gas_actualiza_nodo(arbolini, numeros, nodo_hijo_izq->idx, num_nodos,
-				falso, num_op);
-		gas_actualiza_nodo(arbolini, numeros, nodo_hijo_der->idx, num_nodos,
-				falso, num_op);
-
-		suma_nueva = nodo_hijo_izq->suma + nodo_hijo_der->suma;
-
-		assert_timeout(suma_nueva);
-
-		caca_log_debug(
-				"actualizado nodo %u (%u:%u) para suma %lu, la anterior %lu\n",
-				idx_nodo, nodo->limite_izq, nodo->limite_der, suma_nueva,
-				nodo->suma);
-
-		nodo->suma = suma_nueva;
-	}
-	caca_log_debug("nodo ijo %u no necesita actualizacion\n",
-			idx_nodo_ancestro_inferior);
-	(arbolini + idx_nodo_ancestro_inferior)->necesita_actualizacion = falso;
 }
 
 static inline void gas_valida_segmentos(
@@ -437,8 +378,7 @@ static inline void caca_x_construye_arbol_binario_segmentado(tipo_dato *numeros,
 			}
 				break;
 			default:
-				assert_timeout(0)
-				;
+				assert_timeout(0);
 				break;
 			}
 
@@ -621,14 +561,16 @@ static inline void caca_x_actualiza_arbol_numeros_unicos(
 		idx_ancestro = idx_a_actualizar;
 		do {
 			natural idx_ancestro_inferior = 0;
+			caca_x_numeros_unicos_en_rango *nodo = NULL;
 
 			idx_ancestro_inferior = idx_ancestro;
 			idx_ancestro = (idx_ancestro - 1) / 2;
 
+			nodo = arbol_numeros_unicos + idx_ancestro;
+
 			caca_log_debug("actualizando nodo %u por q es ancestro\n",
 					idx_ancestro);
-			gas_actualiza_nodo_ancestro(arbol_numeros_unicos, numeros,
-					idx_ancestro, num_nodos, idx_ancestro_inferior, num_op);
+			nodo->necesita_actualizacion = verdadero;
 		} while (idx_ancestro);
 
 		caca_log_debug("borrando %u de seg %u, suma seg %ld.\n", viejo_pendejo,
@@ -746,7 +688,7 @@ static inline void caca_x_main() {
 		}
 		num_numeros_redondeado = (1 << max_profundidad);
 
-		assert_timeout(num_numeros_redondeado<=MAX_NUMEROS_REDONDEADO);
+		assert_timeout(num_numeros_redondeado <= MAX_NUMEROS_REDONDEADO);
 
 		caca_log_debug("en estas paginas %s\n",
 				caca_arreglo_a_cadena(numeros, num_numeros_redondeado, buf));
