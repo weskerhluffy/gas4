@@ -551,6 +551,13 @@ static inline void caca_x_actualiza_arbol_numeros_unicos(
 
 		viejo_pendejo = nodo_a_actualizar->suma;
 
+		nodo_a_actualizar->num_operacion = num_op;
+		nodo_a_actualizar->necesita_actualizacion = falso;
+
+		if (viejo_pendejo == nodo_a_actualizar->max_num_esperados) {
+			continue;
+		}
+
 		caca_log_debug("actualizando nodo por q l toca %u (%u:%u) \n",
 				idx_a_actualizar, nodo_a_actualizar->limite_izq,
 				nodo_a_actualizar->limite_der);
@@ -580,10 +587,8 @@ static inline void caca_x_actualiza_arbol_numeros_unicos(
 
 		diferencia = viejo_pendejo - nuevo_valor;
 
-		assert_timeout(
-				(viejo_pendejo / num_indices_a_actualizar) == 1
-						|| diferencia > 0
-						|| nodo_a_actualizar->num_operacion == num_op);
+		assert_timeout(diferencia > 0);
+//						|| nodo_a_actualizar->num_operacion == num_op);
 
 		idx_ancestro = idx_a_actualizar;
 		do {
