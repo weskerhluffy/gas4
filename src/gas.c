@@ -30,7 +30,7 @@
 #define MAX_NODOS (1 << CACA_X_MAX_PROFUNDIDAD)
 #define CACA_X_VALOR_INVALIDO -1
 
-#define GAS_VALIDAR_SEGMENTOS
+//#define GAS_VALIDAR_SEGMENTOS
 
 #define caca_log_debug(formato, args...) 0
 /*
@@ -539,8 +539,11 @@ static inline void caca_x_actualiza_arbol_numeros_unicos(
 
 	for (int i = 0; i < num_indices_a_actualizar; i++) {
 		natural idx_a_actualizar = 0;
+		natural idx_a_actualizar_hijo_izq = 0;
+		natural idx_a_actualizar_hijo_der = 0;
 		natural idx_ancestro = 0;
-
+		caca_x_numeros_unicos_en_rango *nodo_a_actualizar_hijo_izq = NULL;
+		caca_x_numeros_unicos_en_rango *nodo_a_actualizar_hijo_der = NULL;
 		caca_x_numeros_unicos_en_rango *nodo_a_actualizar = NULL;
 
 		idx_a_actualizar = indices_a_actualizar[i];
@@ -551,10 +554,29 @@ static inline void caca_x_actualiza_arbol_numeros_unicos(
 		caca_log_debug("actualizando nodo por q l toca %u (%u:%u) \n",
 				idx_a_actualizar, nodo_a_actualizar->limite_izq,
 				nodo_a_actualizar->limite_der);
-		gas_actualiza_nodo(arbol_numeros_unicos, numeros, idx_a_actualizar,
-				num_nodos, verdadero, num_op);
 
-		nuevo_valor = nodo_a_actualizar->suma;
+		idx_a_actualizar_hijo_izq = idx_a_actualizar * 2 + 1;
+		idx_a_actualizar_hijo_der = idx_a_actualizar * 2 + 2;
+
+		if (idx_a_actualizar_hijo_izq < num_nodos) {
+			nodo_a_actualizar_hijo_izq = arbol_numeros_unicos
+					+ idx_a_actualizar_hijo_izq;
+			nodo_a_actualizar_hijo_der = arbol_numeros_unicos
+					+ idx_a_actualizar_hijo_der;
+
+			gas_actualiza_nodo(arbol_numeros_unicos, numeros,
+					idx_a_actualizar_hijo_izq, num_nodos, verdadero, num_op);
+			gas_actualiza_nodo(arbol_numeros_unicos, numeros,
+					idx_a_actualizar_hijo_der, num_nodos, verdadero, num_op);
+
+			nuevo_valor = nodo_a_actualizar_hijo_izq->suma
+					+ nodo_a_actualizar_hijo_der->suma;
+		} else {
+			assert_timeout(
+					nodo_a_actualizar->limite_izq
+							== nodo_a_actualizar->limite_der);
+			nuevo_valor = numeros[nodo_a_actualizar->limite_izq];
+		}
 
 		diferencia = viejo_pendejo - nuevo_valor;
 
