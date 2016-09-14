@@ -30,7 +30,7 @@
 #define MAX_NODOS (1 << CACA_X_MAX_PROFUNDIDAD)
 #define CACA_X_VALOR_INVALIDO -1
 
-#define GAS_VALIDAR_SEGMENTOS
+//#define GAS_VALIDAR_SEGMENTOS
 
 #define caca_log_debug(formato, args...) 0
 /*
@@ -462,39 +462,31 @@ static inline void caca_x_encuentra_indices_segmento(
 
 static inline void caca_x_actualiza_segmentos(
 		caca_x_numeros_unicos_en_rango *nodos, tipo_dato *numeros,
-		natural idx_nodo, natural limite_izq, natural limite_der,
-		natural num_nodos, natural num_op) {
-	caca_x_numeros_unicos_en_rango *nodo = NULL;
+		natural idx_nodo, natural limite_izq, natural limite_der) {
+	natural idx_nodo_hijo_izq = idx_nodo * 2 + 1;
+	natural idx_nodo_hijo_der = idx_nodo * 2 + 2;
+	caca_x_numeros_unicos_en_rango *nodo = nodos + idx_nodo;
+	caca_x_numeros_unicos_en_rango *nodo_hijo_izq = nodos + idx_nodo_hijo_izq;
+	caca_x_numeros_unicos_en_rango *nodo_hijo_der = nodos + idx_nodo_hijo_der;
+	natural nodo_lim_izq = nodo->limite_izq;
+	natural nodo_lim_der = nodo->limite_der;
 
-	nodo = nodos + idx_nodo;
-
-	if (nodo->limite_der < limite_izq || limite_der < nodo->limite_izq) {
-		caca_log_debug("nada que sumar %d:%d\n", nodo->limite_izq,
-				nodo->limite_der);
-	} else {
-
+	if (nodo_lim_izq >= limite_izq && limite_der >= nodo_lim_der) {
 		caca_log_debug("pues nadie sera %d,%d\n", nodo->limite_izq,
 				nodo->limite_der);
 
-		if (nodo->limite_izq == nodo->limite_der) {
-			nodo->suma = numeros[nodo->limite_izq];
-		} else {
-			caca_x_numeros_unicos_en_rango *nodo_hijo_izq = NULL;
-			caca_x_numeros_unicos_en_rango *nodo_hijo_der = NULL;
+		if (nodo_lim_izq != nodo_lim_der) {
 
-			nodo_hijo_izq = nodos + idx_nodo * 2 + 1;
-			nodo_hijo_der = nodos + idx_nodo * 2 + 2;
-
-			caca_x_actualiza_segmentos(nodos, numeros, 2 * idx_nodo + 1,
-					limite_izq, limite_der, num_nodos, num_op);
-			caca_x_actualiza_segmentos(nodos, numeros, 2 * idx_nodo + 2,
-					limite_izq, limite_der, num_nodos, num_op);
+			caca_x_actualiza_segmentos(nodos, numeros, idx_nodo_hijo_izq,
+					limite_izq, limite_der);
+			caca_x_actualiza_segmentos(nodos, numeros, idx_nodo_hijo_der,
+					limite_izq, limite_der);
 
 			nodo->suma = nodo_hijo_izq->suma + nodo_hijo_der->suma;
+		} else {
+			nodo->suma = numeros[nodo->limite_izq];
 		}
-
 	}
-
 }
 
 static inline unsigned long caca_x_generar_suma_unicos(
@@ -673,7 +665,7 @@ static inline void caca_x_actualiza_estado(tipo_dato *numeros,
 	}
 
 	caca_x_actualiza_segmentos(arbol_numeros_unicos, numeros, 0,
-			idx_actualizado_ini, idx_actualizado_fin, num_nodos, num_op);
+			idx_actualizado_ini, idx_actualizado_fin);
 
 #ifdef GAS_VALIDAR_SEGMENTOS
 	gas_valida_segmentos(arbol_numeros_unicos, numeros, num_nodos,
