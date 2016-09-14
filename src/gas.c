@@ -484,7 +484,7 @@ static inline void caca_x_actualiza_segmentos(
 
 			nodo->suma = nodo_hijo_izq->suma + nodo_hijo_der->suma;
 		} else {
-			nodo->suma = numeros[nodo->limite_izq];
+			nodo->suma = numeros[nodo_lim_izq];
 		}
 	}
 }
