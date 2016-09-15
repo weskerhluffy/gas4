@@ -32,10 +32,11 @@
 
 //#define GAS_VALIDAR_SEGMENTOS
 
+#ifdef GAS_VALIDAR_SEGMENTOS
+#define caca_log_debug printf
+#else
 #define caca_log_debug(formato, args...) 0
-/*
- #define caca_log_debug printf
- */
+#endif
 
 #define assert_timeout(condition) assert(condition);
 /*
@@ -123,7 +124,6 @@ static inline char *caca_arreglo_a_cadena(tipo_dato *arreglo,
 	char *ap_buffer = NULL;
 	int characteres_escritos = 0;
 
-	return NULL ;
 #ifdef ONLINE_JUDGE
 	return NULL;
 #endif
@@ -136,8 +136,9 @@ static inline char *caca_arreglo_a_cadena(tipo_dato *arreglo,
 	ap_buffer = buffer;
 
 	for (i = 0; i < tam_arreglo; i++) {
-		characteres_escritos += sprintf(ap_buffer + characteres_escritos, "%ld",
-				*(arreglo + i));
+		characteres_escritos +=
+				sprintf(ap_buffer + characteres_escritos, "%lld",
+						*(arreglo + i));
 		if (i < tam_arreglo - 1) {
 			*(ap_buffer + characteres_escritos++) = ',';
 		}
@@ -363,37 +364,60 @@ static inline void caca_x_suma_segmentos(natural idx_nodo, natural limite_izq,
 
 }
 
-static inline void caca_x_actualiza_segmentos(natural idx_nodo,
+static inline tipo_dato caca_x_actualiza_segmentos(natural idx_nodo,
+#ifdef GAS_VALIDAR_SEGMENTOS
+		tipo_dato *numeros,
+#endif
 		natural limite_izq, natural limite_der) {
 	caca_x_numeros_unicos_en_rango *nodo = arbol_numeros_unicos + idx_nodo;
 	natural nodo_lim_izq = nodo->limite_izq;
 	natural nodo_lim_der = nodo->limite_der;
 
-	if (nodo_lim_izq >= limite_izq && limite_der >= nodo_lim_der) {
-		caca_log_debug("pues nadie sera %d,%d\n", nodo->limite_izq,
-				nodo->limite_der);
+	caca_log_debug(
+			"stand by my side actualizando? segmento %u->%u en nodo %u %u->%u\n",
+			limite_izq, limite_der, idx_nodo, nodo_lim_izq, nodo_lim_der);
 
-		if (nodo_lim_izq != nodo_lim_der) {
-			natural idx_nodo_hijo_izq = (idx_nodo << 1) | 1;
-			natural idx_nodo_hijo_der = idx_nodo_hijo_izq + 1;
-			caca_x_numeros_unicos_en_rango *nodo_hijo_izq = arbol_numeros_unicos
-					+ idx_nodo_hijo_izq;
-			caca_x_numeros_unicos_en_rango *nodo_hijo_der = arbol_numeros_unicos
-					+ idx_nodo_hijo_der;
-
-			caca_x_actualiza_segmentos(idx_nodo_hijo_izq, limite_izq,
-					limite_der);
-			caca_x_actualiza_segmentos(idx_nodo_hijo_der, limite_izq,
-					limite_der);
-
-			nodo->suma = nodo_hijo_izq->suma + nodo_hijo_der->suma;
-		} else {
-			nodo->suma = numeros[nodo_lim_izq];
-		}
+	if (nodo_lim_der < limite_izq || limite_der < nodo_lim_izq) {
+		return nodo->suma;
 	}
+
+	caca_log_debug("pues nadie sera %d,%d\n", nodo->limite_izq,
+			nodo->limite_der);
+
+	if (nodo_lim_izq != nodo_lim_der) {
+		natural idx_nodo_hijo_izq = (idx_nodo << 1) | 1;
+		natural idx_nodo_hijo_der = idx_nodo_hijo_izq + 1;
+		caca_log_debug(
+				"antes de actualizar recursivo nodo %u %u->%u suma %lld\n",
+				idx_nodo, nodo_lim_izq, nodo_lim_der, nodo->suma);
+
+		nodo->suma = caca_x_actualiza_segmentos(idx_nodo_hijo_izq,
+#ifdef GAS_VALIDAR_SEGMENTOS
+				numeros,
+#endif
+				limite_izq, limite_der)
+				+ caca_x_actualiza_segmentos(idx_nodo_hijo_der,
+#ifdef GAS_VALIDAR_SEGMENTOS
+						numeros,
+#endif
+						limite_izq, limite_der);
+		caca_log_debug(
+				"despues de actualizar recursivo nodo %u %u->%u suma %lld\n",
+				idx_nodo, nodo_lim_izq, nodo_lim_der, nodo->suma);
+
+	} else {
+		caca_log_debug("actualizando de %llu a %llu nodo %u %u->%u\n",
+				nodo->suma, numeros[nodo_lim_izq], idx_nodo, limite_izq,
+				limite_der);
+		nodo->suma = numeros[nodo_lim_izq];
+	}
+	return nodo->suma;
 }
 
 static inline tipo_dato caca_x_suma_segmento(natural limite_izq,
+#ifdef GAS_VALIDAR_SEGMENTOS
+		tipo_dato *numeros, natural num_nodos,
+#endif
 		natural limite_der) {
 
 	res_seg = 0;
@@ -401,16 +425,15 @@ static inline tipo_dato caca_x_suma_segmento(natural limite_izq,
 
 	assert_timeout(res_seg > 0);
 
-	caca_log_debug("La suma es %ld\n", res_seg);
+	caca_log_debug("La suma es %lld\n", res_seg);
 
-#ifdef GAS_VALIDAR_SEGMENTOS
-	gas_valida_segmentos(arbol_numeros_unicos, numeros, num_nodos, 0,
-			indices_nodos, num_indices_nodos);
-#endif
 	return res_seg;
 }
 
 static inline void caca_x_actualiza_estado(natural idx_actualizado_ini,
+#ifdef GAS_VALIDAR_SEGMENTOS
+		tipo_dato *numeros, natural num_nodos,
+#endif
 		natural idx_actualizado_fin) {
 	bool todos_1 = verdadero;
 #ifdef CACA_X_LOG
@@ -430,7 +453,7 @@ static inline void caca_x_actualiza_estado(natural idx_actualizado_ini,
 			continue;
 		}
 		nuevo_valor = floor(sqrt(viejo_valor));
-		caca_log_debug("actualizando posicion %u %ld a %ld\n", i, viejo_valor,
+		caca_log_debug("actualizando posicion %u %llu a %llu\n", i, viejo_valor,
 				nuevo_valor);
 		numeros[i] = nuevo_valor;
 		todos_1 = falso;
@@ -440,7 +463,11 @@ static inline void caca_x_actualiza_estado(natural idx_actualizado_ini,
 		return;
 	}
 
-	caca_x_actualiza_segmentos(0, idx_actualizado_ini, idx_actualizado_fin);
+	caca_x_actualiza_segmentos(0,
+#ifdef GAS_VALIDAR_SEGMENTOS
+			numeros,
+#endif
+			idx_actualizado_ini, idx_actualizado_fin);
 
 #ifdef GAS_VALIDAR_SEGMENTOS
 	gas_valida_segmentos(arbol_numeros_unicos, numeros, num_nodos,
@@ -457,7 +484,7 @@ static inline void caca_x_main() {
 	natural num_numeros = 0;
 	natural cont_casos = 0;
 
-	char buf[100] = { '\0' };
+	char buf[10000] = { '\0' };
 
 	matriz_nums = calloc(MAX_NUMEROS_REDONDEADO, sizeof(tipo_dato));
 	assert_timeout(matriz_nums);
@@ -555,6 +582,9 @@ static inline void caca_x_main() {
 			switch (tipo_query) {
 			case 1:
 				sum = caca_x_suma_segmento(idx_query_ini - 1,
+#ifdef GAS_VALIDAR_SEGMENTOS
+						numeros, num_nodos,
+#endif
 						idx_query_fin - 1);
 				printf("%llu\n", sum);
 				break;
@@ -562,7 +592,11 @@ static inline void caca_x_main() {
 				caca_log_debug("intervalo a actualizar %u a %u\n",
 						idx_query_ini - 1, idx_query_fin - 1);
 
-				caca_x_actualiza_estado(idx_query_ini - 1, idx_query_fin - 1);
+				caca_x_actualiza_estado(idx_query_ini - 1,
+#ifdef GAS_VALIDAR_SEGMENTOS
+						numeros, num_nodos,
+#endif
+						idx_query_fin - 1);
 				break;
 			default:
 				abort();
