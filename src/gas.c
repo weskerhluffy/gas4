@@ -410,7 +410,10 @@ static inline tipo_dato caca_x_actualiza_segmentos(natural idx_nodo,
 		caca_log_debug("actualizando de %llu a %llu nodo %u %u->%u\n",
 				nodo->suma, numeros[nodo_lim_izq], idx_nodo, limite_izq,
 				limite_der);
-		nodo->suma = numeros[nodo_lim_izq];
+		nodo->suma = floor(sqrt(nodo->suma));
+#ifdef GAS_VALIDAR_SEGMENTOS
+		numeros[nodonodo_lim_izq]=nodo->suma;
+#endif
 	}
 	return nodo->suma;
 }
@@ -436,7 +439,6 @@ static inline void caca_x_actualiza_estado(natural idx_actualizado_ini,
 		tipo_dato *numeros, natural num_nodos,
 #endif
 		natural idx_actualizado_fin) {
-	bool todos_1 = verdadero;
 #ifdef CACA_X_LOG
 	char *buf;
 #endif
@@ -444,25 +446,6 @@ static inline void caca_x_actualiza_estado(natural idx_actualizado_ini,
 #ifdef CACA_X_LOG
 	buf = calloc(100000, sizeof(char));
 #endif
-
-	for (int i = idx_actualizado_ini; i <= idx_actualizado_fin; i++) {
-		tipo_dato viejo_valor;
-		tipo_dato nuevo_valor;
-
-		viejo_valor = numeros[i];
-		if (viejo_valor == 1) {
-			continue;
-		}
-		nuevo_valor = floor(sqrt(viejo_valor));
-		caca_log_debug("actualizando posicion %u %llu a %llu\n", i, viejo_valor,
-				nuevo_valor);
-		numeros[i] = nuevo_valor;
-		todos_1 = falso;
-	}
-
-	if (todos_1) {
-		return;
-	}
 
 	caca_x_actualiza_segmentos(0,
 #ifdef GAS_VALIDAR_SEGMENTOS
