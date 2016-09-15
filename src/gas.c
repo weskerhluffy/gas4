@@ -377,7 +377,8 @@ static inline tipo_dato caca_x_actualiza_segmentos(natural idx_nodo,
 			"stand by my side actualizando? segmento %u->%u en nodo %u %u->%u\n",
 			limite_izq, limite_der, idx_nodo, nodo_lim_izq, nodo_lim_der);
 
-	if (nodo_lim_der < limite_izq || limite_der < nodo_lim_izq) {
+	if (nodo_lim_der < limite_izq || limite_der < nodo_lim_izq
+			|| nodo->max_num_esperados == nodo->suma) {
 		return nodo->suma;
 	}
 
