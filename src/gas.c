@@ -44,7 +44,7 @@
  #define assert_timeout(condition) if(!(condition)){printf("fuck\n");sleep(10);}
  */
 
-typedef unsigned long long tipo_dato;
+typedef long long tipo_dato;
 typedef unsigned int natural;
 
 typedef long long bitch_vector;
@@ -354,6 +354,7 @@ static inline void caca_x_suma_segmentos(natural idx_nodo, natural limite_izq,
 
 	if (limite_izq <= nodo_lim_izq && nodo_lim_der <= limite_der) {
 		res_seg += nodo->suma;
+		assert_timeout(res_seg > 0);
 		return;
 	}
 	natural idx_nodo_hijo_izq = (idx_nodo << 1) | 1;
@@ -412,7 +413,7 @@ static inline tipo_dato caca_x_actualiza_segmentos(natural idx_nodo,
 				limite_der);
 		nodo->suma = floor(sqrt(nodo->suma));
 #ifdef GAS_VALIDAR_SEGMENTOS
-		numeros[nodonodo_lim_izq]=nodo->suma;
+		numeros[nodo_lim_izq]=nodo->suma;
 #endif
 	}
 	return nodo->suma;
@@ -570,7 +571,7 @@ static inline void caca_x_main() {
 						numeros, num_nodos,
 #endif
 						idx_query_fin - 1);
-				printf("%llu\n", sum);
+				printf("%lld\n", sum);
 				break;
 			case 0:
 				caca_log_debug("intervalo a actualizar %u a %u\n",
