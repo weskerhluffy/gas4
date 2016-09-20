@@ -46,6 +46,7 @@
 
 typedef long long tipo_dato;
 typedef unsigned int natural;
+typedef int entero;
 
 typedef long long bitch_vector;
 
@@ -76,7 +77,6 @@ typedef struct caca_x_estado_recursion {
 	caca_x_numeros_unicos_en_rango *nodo;
 } caca_x_estado_recursion;
 
-caca_x_estado_recursion *estado = NULL;
 caca_x_numeros_unicos_en_rango *arbol_numeros_unicos;
 tipo_dato *numeros;
 
@@ -175,152 +175,50 @@ static inline char *caca_arreglo_a_cadena_natural(natural *arreglo,
 static inline void caca_x_inicializar_nodo(caca_x_numeros_unicos_en_rango *nodo,
 		int altura, int idx_nodo, int limite_izq, int limite_der) {
 	nodo->altura = altura;
-	nodo->max_numeros = 1 << nodo->altura;
+	nodo->max_numeros = 1 << altura;
 	nodo->idx = idx_nodo;
 	nodo->limite_izq = limite_izq;
 	nodo->limite_der = limite_der;
 }
 
-static inline void caca_x_construye_arbol_binario_segmentado(
-		natural num_numeros, natural max_profundidad,
-		natural ultimo_indice_numero_valido) {
-	bool zero_ya_asignado = falso;
-	int profundidad = 0;
+static tipo_dato caca_x_construye_arbol_binario_segmentado(natural idx_nodo,
+		natural idx_inicio, natural idx_fin, natural idx_fin_verdadero,
+		entero altura) {
 
-	estado->idx_ini = 0;
-	estado->idx_fin = num_numeros;
-	estado->idx_nodo = 0;
-	estado->nodo = NULL;
-	estado->profundidad = 0;
-	estado->num_popeado = 0;
+	caca_x_numeros_unicos_en_rango *nodo = arbol_numeros_unicos + idx_nodo;
+	assert_timeout(idx_inicio<=idx_fin);
+	assert_timeout(idx_fin<=idx_fin_verdadero);
+	assert_timeout(altura>=0);
 
-	while (profundidad != -1) {
-		caca_x_estado_recursion *estado_actual = estado + profundidad;
-		int idx_ini = estado_actual->idx_ini;
-		int idx_fin = estado_actual->idx_fin;
-		int idx_nodo = estado_actual->idx_nodo;
-		int altura = max_profundidad - profundidad;
-		caca_x_numeros_unicos_en_rango *nodo;
+	caca_x_inicializar_nodo(nodo, altura, idx_nodo, idx_inicio, idx_fin);
 
-		assert_timeout(estado_actual->profundidad == profundidad);
-		caca_log_debug("perfume %d\n", profundidad);
+	if (idx_inicio != idx_fin) {
+		natural idx_hijo_izq = idx_nodo << 1 | 1;
+		natural altura_sig = altura - 1;
+		natural idx_medio = idx_inicio + ((idx_fin - idx_inicio) >> 1);
 
-		caca_log_debug("en altura %d de pseudo rec idx %d\n", altura, idx_nodo);
+		nodo->suma = caca_x_construye_arbol_binario_segmentado(idx_hijo_izq,
+				idx_inicio, idx_medio, idx_fin_verdadero, altura_sig)
+				+ caca_x_construye_arbol_binario_segmentado(idx_hijo_izq + 1,
+						idx_medio + 1, idx_fin, idx_fin_verdadero, altura_sig);
 
-		if (!estado_actual->num_popeado) {
-			nodo = arbol_numeros_unicos + idx_nodo;
+		/*
+		nodo->max_num_esperados =
+				(idx_fin_verdadero >= idx_fin) ? nodo->max_numeros :
+				(idx_fin_verdadero >= idx_inicio) ?
+						(idx_fin_verdadero - idx_inicio + 1) : 0;
+						*/
 
-			caca_x_inicializar_nodo(nodo, altura, idx_nodo, idx_ini, idx_fin);
-		}
-
-		estado_actual->num_popeado++;
-
-		profundidad--;
-
-		if (altura) {
-			int ultimo_num_popeado;
-			int idx_medio;
-			caca_x_estado_recursion *estado_futuro;
-
-			if (estado_actual->num_popeado == 1
-					|| estado_actual->num_popeado == 2) {
-				int distancia_media = (idx_fin - idx_ini) >> 1;
-
-				idx_medio = idx_ini + distancia_media;
-
-				caca_log_debug("creando nueva profundidad \n");
-				estado_futuro = estado + estado_actual->profundidad + 1;
-
-				caca_log_debug("num de popeos d estado actual es %d\n",
-						estado_actual->num_popeado);
-
-				if (estado_actual->num_popeado == 1) {
-					estado_actual->nodo = nodo;
-				}
-
-				memset(estado_futuro, 0, sizeof(caca_x_estado_recursion));
-
-				estado_futuro->profundidad = estado_actual->profundidad + 1;
-
-			}
-
-			ultimo_num_popeado = estado_actual->num_popeado;
-
-			switch (estado_actual->num_popeado) {
-			case 1:
-				estado_futuro->idx_ini = idx_ini;
-				estado_futuro->idx_fin = idx_medio;
-				estado_futuro->idx_nodo = 2 * idx_nodo + 1;
-				caca_log_debug("segmentando izq de %d a %d en alt %d\n",
-						idx_ini, idx_medio, altura);
-				break;
-			case 2:
-				estado_futuro->idx_ini = idx_medio + 1;
-				estado_futuro->idx_fin = idx_fin;
-				estado_futuro->idx_nodo = 2 * idx_nodo + 2;
-				caca_log_debug("segmentando der de %d a %d en alt %d\n",
-						idx_medio + 1, idx_fin, altura);
-				break;
-			case 3: {
-				natural idx_hijo_izq = (idx_nodo << 1) | 1;
-				caca_x_numeros_unicos_en_rango *hijo_izq = arbol_numeros_unicos
-						+ idx_hijo_izq;
-				caca_x_numeros_unicos_en_rango *hijo_der = arbol_numeros_unicos
-						+ idx_hijo_izq + 1;
-
-				estado_actual->nodo->suma = hijo_izq->suma + hijo_der->suma;
-
-				estado_actual->nodo->max_num_esperados =
-						(ultimo_indice_numero_valido
-								>= estado_actual->nodo->limite_der) ?
-								estado_actual->nodo->max_numeros :
-						(ultimo_indice_numero_valido
-								>= estado_actual->nodo->limite_izq) ?
-								(ultimo_indice_numero_valido
-										- estado_actual->nodo->limite_izq + 1) :
-								0;
-
-				memset(estado_actual, 0, sizeof(caca_x_estado_recursion));
-				caca_log_debug("ultimo 'recursion' de nodo %d, nada q acer\n",
-						idx_nodo);
-			}
-				break;
-			default:
-				assert_timeout(0);
-				break;
-			}
-
-			if (ultimo_num_popeado < 3) {
-				profundidad += 2;
-				caca_log_debug("aumentando profundidad a %d\n", profundidad);
-			}
-
+		return nodo->suma;
+	} else {
+		assert_timeout(altura==0);
+		if (idx_inicio <= idx_fin_verdadero) {
+			nodo->suma = numeros[idx_inicio];
+			nodo->max_num_esperados = 1;
+			return nodo->suma;
 		} else {
-			assert_timeout(idx_ini == idx_fin);
-			assert_timeout(nodo);
-
-			int numero_actual = numeros[idx_ini];
-
-			assert_timeout(nodo->max_numeros == 1);
-			assert_timeout(nodo->limite_izq == nodo->limite_der);
-
-			if (idx_ini || !zero_ya_asignado) {
-				nodo->suma = numero_actual;
-				nodo->max_num_esperados = 1;
-
-				caca_log_debug(
-						"asignado unico numero %d a indice de arbol %d\n",
-						numero_actual, idx_nodo);
-			} else {
-				caca_log_debug(
-						"no asignado unico numero %d a indice de arbol %d\n",
-						numero_actual, idx_nodo);
-			}
-
-			memset(estado_actual, 0, sizeof(caca_x_estado_recursion));
-			if (!idx_ini) {
-				zero_ya_asignado = verdadero;
-			}
+//			numeros[idx_inicio] = 0;
+			return 0;
 		}
 	}
 }
@@ -440,9 +338,6 @@ static inline void caca_x_main() {
 	matriz_nums = calloc(MAX_NUMEROS_REDONDEADO, sizeof(tipo_dato));
 	assert_timeout(matriz_nums);
 
-	estado = calloc(CACA_X_MAX_PROFUNDIDAD, sizeof(caca_x_estado_recursion));
-	assert_timeout(estado);
-
 	while (scanf("%u\n", &num_numeros) > 0) {
 		natural num_queries;
 		natural cont_queries = 0;
@@ -493,8 +388,8 @@ static inline void caca_x_main() {
 		caca_log_debug("llamando a func rec con max prof %d\n",
 				max_profundidad + 2);
 
-		caca_x_construye_arbol_binario_segmentado(num_numeros_redondeado - 1,
-				max_profundidad, num_numeros - 1);
+		caca_x_construye_arbol_binario_segmentado(0, 0,
+				num_numeros_redondeado - 1, num_numeros - 1, max_profundidad);
 
 #ifdef GAS_VALIDAR_SEGMENTOS
 		gas_valida_segmentos(arbol_numeros_unicos, numeros, num_nodos,
@@ -554,7 +449,6 @@ static inline void caca_x_main() {
 		cont_casos++;
 	}
 	free(matriz_nums);
-	free(estado);
 }
 
 int main(void) {
