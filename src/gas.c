@@ -186,6 +186,7 @@ static tipo_dato caca_x_construye_arbol_binario_segmentado(natural idx_nodo,
 		entero altura) {
 
 	caca_x_numeros_unicos_en_rango *nodo = arbol_numeros_unicos + idx_nodo;
+
 	assert_timeout(idx_inicio<=idx_fin);
 	assert_timeout(idx_fin<=idx_fin_verdadero);
 	assert_timeout(altura>=0);
@@ -202,12 +203,13 @@ static tipo_dato caca_x_construye_arbol_binario_segmentado(natural idx_nodo,
 				+ caca_x_construye_arbol_binario_segmentado(idx_hijo_izq + 1,
 						idx_medio + 1, idx_fin, idx_fin_verdadero, altura_sig);
 
-		/*
-		nodo->max_num_esperados =
-				(idx_fin_verdadero >= idx_fin) ? nodo->max_numeros :
-				(idx_fin_verdadero >= idx_inicio) ?
-						(idx_fin_verdadero - idx_inicio + 1) : 0;
-						*/
+		if (idx_fin_verdadero >= idx_fin) {
+			nodo->max_num_esperados = nodo->max_numeros;
+		} else {
+			if (idx_fin_verdadero >= idx_inicio) {
+				nodo->max_num_esperados = (idx_fin_verdadero - idx_inicio + 1);
+			}
+		}
 
 		return nodo->suma;
 	} else {
